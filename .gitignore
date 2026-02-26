@@ -1,0 +1,29 @@
+# Python / virtual environments
+.venv/
+venv/
+env/
+*.pyc
+__pycache__/
+
+# IDE / editor
+.vscode/
+.idea/
+.DS_Store
+
+# Model artifacts and derived outputs
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# OS-specific
+Thumbs.db
+ehthumbs.db
+
+# GitHub Actions / CI artifacts
+defect_report.json
+
