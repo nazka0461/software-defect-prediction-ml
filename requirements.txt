@@ -15,3 +15,5 @@ pytest
 openml
 lizard
 requests
+tqdm
+tabulate
