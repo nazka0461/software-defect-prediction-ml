@@ -55,7 +55,8 @@ PIPELINE_PATH = MODELS_DIR / "pipeline.pkl"
 TARGET_COL = "label"
 DATASET_COL = "dataset"
 RANDOM_STATE = 42
-TEST_SIZE = 0.15
+TEST_SIZE = 0.20
+VALIDATION_SIZE = 0.20
 TRAIN_N_JOBS =9
 RANDOM_SEARCH_ITERS = 40
 
@@ -316,26 +317,11 @@ def find_optimal_threshold(y_true: np.ndarray, y_score: np.ndarray) -> float:
     return best_threshold
 
 
-def calibrate_threshold(model: Any, X_train: np.ndarray, y_train: np.ndarray) -> float:
-    if np.unique(y_train).size < 2:
+def calibrate_threshold(model: Any, X_calib: np.ndarray, y_calib: np.ndarray) -> float:
+    if np.unique(y_calib).size < 2:
         return 0.5
-
-    calibration_cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-    method = "predict_proba" if hasattr(model, "predict_proba") else "decision_function"
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        oof_raw = cross_val_predict(
-            model,
-            X_train,
-            y_train,
-            cv=calibration_cv,
-            method=method,
-            n_jobs=TRAIN_N_JOBS,
-        )
-
-    oof_scores = oof_raw[:, 1] if method == "predict_proba" else np.asarray(oof_raw, dtype=float)
-    return find_optimal_threshold(y_train, oof_scores)
+    y_scores = get_positive_scores(model, X_calib)
+    return find_optimal_threshold(y_calib, y_scores)
 
 
 def evaluate_on_test(
@@ -604,15 +590,24 @@ def main() -> None:
     defect_rate = 100 * y_all.mean() if len(y_all) else 0.0
     log.info("Pooled dataset shape=%s | defective=%d (%.1f%%)", X_all.shape, y_all.sum(), defect_rate)
 
-    log.info("STEP 3 — Global stratified train/test split")
-    X_train, X_test, y_train, y_test = train_test_split(
+    log.info("STEP 3 — Global stratified train/validation/test split")
+    holdout_size = TEST_SIZE + VALIDATION_SIZE
+    X_train, X_holdout, y_train, y_holdout = train_test_split(
         X_all,
         y_all,
-        test_size=TEST_SIZE,
+        test_size=holdout_size,
         stratify=y_all,
         random_state=RANDOM_STATE,
     )
-    log.info("Train=%s  Test=%s", X_train.shape, X_test.shape)
+    test_fraction_in_holdout = TEST_SIZE / holdout_size
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_holdout,
+        y_holdout,
+        test_size=test_fraction_in_holdout,
+        stratify=y_holdout,
+        random_state=RANDOM_STATE,
+    )
+    log.info("Train=%s  Validation=%s  Test=%s", X_train.shape, X_val.shape, X_test.shape)
 
     class_balance = pd.Series(y_train).value_counts().sort_index().to_dict()
     neg_count = int(class_balance.get(0, 0))
@@ -693,7 +688,7 @@ def main() -> None:
             warnings.simplefilter("ignore")
             best_model.fit(X_train, y_train)
 
-        best_threshold = calibrate_threshold(best_model, X_train, y_train)
+        best_threshold = calibrate_threshold(best_model, X_val, y_val)
         thresholds[name] = best_threshold
         log.info("  [%s] Calibrated threshold=%.3f", name, best_threshold)
 

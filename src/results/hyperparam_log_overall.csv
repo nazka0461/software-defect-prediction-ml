@@ -1,7 +1,7 @@
 Model,solver,max_iter,C,n_estimators,min_samples_split,min_samples_leaf,max_features,max_depth,bootstrap,subsample,reg_lambda,reg_alpha,min_child_weight,learning_rate,gamma,colsample_bytree,num_leaves,min_child_samples,sampling_strategy
-LogReg,liblinear,500.0,0.1,,,,,,,,,,,,,,,,
-RF,,,,800.0,20.0,4.0,sqrt,12.0,True,,,,,,,,,,
-XGB,,,,400.0,,,,3.0,,0.6,10.0,0.0,1.0,0.03,0.1,1.0,,,
-LGBM,,,,200.0,,,,8.0,,1.0,0.01,0.01,,0.03,,0.8,15.0,20.0,
-ExtraTrees,,,,500.0,2.0,2.0,log2,20.0,,,,,,,,,,,
-BalancedRF,,,,500.0,2.0,4.0,,12.0,,,,,,,,,,,all
+LogReg,lbfgs,500.0,10.0,,,,,,,,,,,,,,,,
+RF,,,,200.0,5.0,4.0,log2,12.0,True,,,,,,,,,,
+XGB,,,,200.0,,,,3.0,,0.6,5.0,1.0,5.0,0.01,0.0,0.8,,,
+LGBM,,,,400.0,,,,5.0,,0.8,0.0,0.1,,0.01,,0.6,15.0,40.0,
+ExtraTrees,,,,800.0,2.0,2.0,sqrt,20.0,,,,,,,,,,,
+BalancedRF,,,,300.0,10.0,2.0,,8.0,,,,,,,,,,,all
