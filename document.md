@@ -10,7 +10,7 @@ The work progressed through three major stages:
 2. **Experiment 2** refined the evaluation protocol with a proper train/validation/test split on the same combined dataset.
 3. **Experiment 3** expanded the study to 12 individual PROMISE datasets and added deployment, CI/CD automation, and explainable AI.
 
-The key thesis-level conclusion is that the "best research model" and the "best deployable model" are not necessarily the same thing. In this project, `ExtraTrees` emerged as the strongest overall benchmark family across the 12-dataset study, while `RF` on `KC1` became the final operational model because it offered strong predictive performance and full compatibility with the CI/CD metric-mapping pipeline.
+The key thesis-level conclusion is that the "best research model" and the "best deployable model" are not necessarily the same thing. In the current full 12-dataset benchmark, `BalancedRF` emerged as the strongest overall benchmark family across the study, while `RF` on `KC1` became the final operational model because it offered strong predictive performance and full compatibility with the CI/CD metric-mapping pipeline.
 
 ## Project Timeline Overview
 
@@ -18,7 +18,7 @@ The key thesis-level conclusion is that the "best research model" and the "best 
 | --- | --- | --- | --- | --- |
 | Experiment 1 | Initial benchmark | Combined cleaned dataset | Pooled training baseline | `ExtraTrees` ranked first overall |
 | Experiment 2 | Evaluation refinement | Same combined cleaned dataset | 60/20/20 train/validation/test split | `RF` ranked first overall |
-| Experiment 3 | Generalization + deployment | 12 raw ARFF PROMISE datasets | Individual-dataset benchmarking + API + CI/CD + XAI | `ExtraTrees` strongest overall family, `RF` on `KC1` selected for deployment |
+| Experiment 3 | Generalization + deployment | 12 raw ARFF PROMISE datasets | Individual-dataset benchmarking + API + CI/CD + XAI | `BalancedRF` strongest overall family, `RF` on `KC1` selected for deployment |
 
 ## Experiment 1: Combined Dataset Baseline
 
@@ -183,21 +183,21 @@ Using that rule, the best individual run achieved by each model family is:
 
 | Model | Best dataset | F1 | AUC-ROC | MCC | Selected feature count |
 | --- | --- | ---: | ---: | ---: | ---: |
-| BalancedRF | PC4 | 0.5783 | 0.9324 | 0.5191 | 15 |
-| ExtraTrees | PC4 | 0.6757 | 0.9349 | 0.6300 | 15 |
-| LGBM | PC4 | 0.6753 | 0.9424 | 0.6299 | 15 |
+| BalancedRF | MC2 | 0.6154 | 0.6875 | 0.5819 | 14 |
+| ExtraTrees | PC4 | 0.6579 | 0.9292 | 0.6096 | 15 |
+| LGBM | MC2 | 0.6154 | 0.6458 | 0.5819 | 14 |
 | LogReg | MW1 | 0.6000 | 0.6522 | 0.5565 | 12 |
-| RF | PC4 | 0.5938 | 0.9451 | 0.5473 | 15 |
-| XGB | PC4 | 0.6506 | 0.9463 | 0.6044 | 15 |
+| RF | MC2 | 0.6154 | 0.6944 | 0.5819 | 14 |
+| XGB | PC4 | 0.6207 | 0.9366 | 0.5723 | 15 |
 
 ### Interpretation
 
-The best individual-dataset runs show that the strongest single-dataset results came largely from the `PC4` dataset. This is important because it separates two different questions:
+The best individual-dataset runs show that the strongest single-dataset results came largely from `PC4` and `MC2`, with `MW1` remaining especially favorable for `LogReg`. This is important because it separates two different questions:
 
 - **Which model family can achieve the strongest per-dataset result?**
 - **Which trained model should actually be deployed in the CI/CD pipeline?**
 
-For example, `RF`'s best individual MCC came from `PC4`, but the final deployed model is still `RF` on `KC1`, because deployment was chosen using both predictive strength and feature compatibility with the automated commit-level workflow.
+For example, `RF`'s best individual MCC came from `MC2`, but the final deployed model is still `RF` on `KC1`, because deployment was chosen using both predictive strength and feature compatibility with the automated commit-level workflow.
 
 ## Overall Individual Benchmark Results
 
@@ -207,20 +207,20 @@ The overall benchmark aggregates results across all 12 individual datasets.
 
 | Model | Mean rank | Mean F1 | Mean AUC-ROC | Mean MCC | Mean delta vs combined baseline MCC |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| ExtraTrees | 2.9167 | 0.3904 | 0.7863 | 0.3000 | -0.0002 |
-| LogReg | 2.9167 | 0.3753 | 0.7470 | 0.2922 | 0.0513 |
-| RF | 3.1667 | 0.3820 | 0.7838 | 0.2988 | 0.0625 |
-| BalancedRF | 3.7500 | 0.3818 | 0.7604 | 0.2994 | 0.0677 |
-| XGB | 4.0833 | 0.3698 | 0.7461 | 0.2793 | 0.0299 |
-| LGBM | 4.1667 | 0.3457 | 0.7451 | 0.2337 | -0.0076 |
+| BalancedRF | 2.7500 | 0.4028 | 0.7703 | 0.3390 | 0.1072 |
+| LogReg | 3.2500 | 0.3670 | 0.7514 | 0.2712 | 0.0304 |
+| XGB | 3.4167 | 0.3733 | 0.7639 | 0.2837 | 0.0343 |
+| RF | 3.7500 | 0.3663 | 0.7769 | 0.2945 | 0.0582 |
+| ExtraTrees | 3.7500 | 0.3515 | 0.7840 | 0.2565 | -0.0437 |
+| LGBM | 4.0833 | 0.3668 | 0.7662 | 0.2921 | 0.0508 |
 
 ### Benchmark Conclusions
 
-- **Overall family winner**: `ExtraTrees`
+- **Overall family winner**: `BalancedRF`
 - **Deployable winner**: `RF` on `KC1`
 - `RF` has the highest positive mean `F1` delta vs the combined baseline.
 - `BalancedRF` has the largest positive mean `MCC` delta vs the combined baseline.
-- `ExtraTrees` is essentially flat on mean `MCC` delta relative to the combined baseline, but still wins overall by mean rank.
+- `ExtraTrees` still has the highest mean `AUC-ROC`, but its average `F1` and `MCC` are weaker than `BalancedRF` in the current full run.
 
 ### Deployable Winner Details
 
@@ -228,11 +228,11 @@ From `src/models/deployment/best_model_bundle.json`:
 
 - Final deployed model: `RF`
 - Dataset: `KC1`
-- Threshold: `0.45388100311700624`
+- Threshold: `0.5585755777185836`
 - Benchmark metrics:
-  - `F1 = 0.5672`
-  - `MCC = 0.4859`
-  - `AUC-ROC = 0.8262`
+  - `F1 = 0.6013`
+  - `MCC = 0.5243`
+  - `AUC-ROC = 0.8481`
 - Strictly deployable: `true`
 - Missing mapped features: none
 
@@ -246,6 +246,38 @@ Supported deployable feature list:
 - `lOComment`
 - `locCodeAndComment`
 - `uniq_Op`
+
+### Ablation and Statistical Comparison
+
+The saved Experiment 3 evaluation artifacts also include an ablation study and a Wilcoxon signed-rank comparison.
+
+From `src/results/individual/ablation_study.csv` for the deployable `RF` on `KC1`:
+
+- selected features, no SMOTE:
+  - `F1 = 0.6013`
+  - `AUC-ROC = 0.8481`
+  - `MCC = 0.5243`
+- all post-filter features, no SMOTE:
+  - `F1 = 0.5730`
+  - `AUC-ROC = 0.8501`
+  - `MCC = 0.4981`
+- selected features, with SMOTE:
+  - `F1 = 0.4885`
+  - `AUC-ROC = 0.8393`
+  - `MCC = 0.3946`
+
+These results support two practical conclusions:
+
+- the selected-feature configuration was better than using all post-filter features on the main deployment metric set
+- adding SMOTE in this final deployable configuration reduced held-out performance rather than improving it
+
+From `src/results/individual/wilcoxon_top_two_models.csv`:
+
+- compared families: `BalancedRF` vs `LogReg`
+- Wilcoxon statistic: `18.0`
+- p-value: `0.1099`
+
+For the current saved full run, that p-value is above `0.05`, so the top-two family difference in this test should be described as not statistically significant at the conventional 5% threshold.
 
 ## SHAP and XAI
 
@@ -273,11 +305,11 @@ These files provide instance-level feature-attribution reports in a human-readab
 
 The three highest-risk predictions are listed in `figures/xai/high_risk_cases.csv`:
 
-- sample `323`: predicted probability `0.8916`, actual label `0`
-- sample `419`: predicted probability `0.8799`, actual label `1`
-- sample `153`: predicted probability `0.8668`, actual label `1`
+- sample `153`: predicted probability `0.9037`, actual label `1`
+- sample `29`: predicted probability `0.9027`, actual label `0`
+- sample `323`: predicted probability `0.8901`, actual label `0`
 
-This is useful analytically because one of the top-risk predictions was actually labeled clean. That gives us a concrete false-positive case study: the model assigned very high risk, SHAP/LIME can be used to inspect why, and the result helps us discuss both interpretability and the practical cost of conservative defect-risk screening.
+This is useful analytically because two of the top three high-risk predictions were actually labeled clean. That gives us concrete false-positive case studies: the model assigned very high risk, SHAP/LIME can be used to inspect why, and the results help us discuss both interpretability and the practical cost of conservative defect-risk screening.
 
 ### XAI Interpretation
 
@@ -292,7 +324,7 @@ SHAP and LIME together make the final model auditable rather than just accurate.
 | Dataset scope | Combined cleaned dataset | Same combined cleaned dataset | 12 individual raw PROMISE datasets |
 | Split strategy | 85/15-style train/test | 60/20/20 train/validation/test | Per-dataset split inside each benchmark run |
 | Threshold strategy | Out-of-fold train-based calibration | Validation-based calibration | Validation-based calibration per dataset |
-| Best ranked model | `ExtraTrees` | `RF` | `ExtraTrees` as overall family winner |
+| Best ranked model | `ExtraTrees` | `RF` | `BalancedRF` as overall family winner |
 | Strongest held-out test model | `RF` by MCC | `ExtraTrees` by MCC | Varies by dataset and model family |
 | Deployment decision | Not in scope | Not in scope | `RF` on `KC1` |
 | Main strength | Strong pooled baseline | More realistic evaluation | Strongest overall research + engineering integration |
@@ -335,7 +367,7 @@ The deployment bundle confirms that the final model is **strictly deployable**:
 - missing mapped features: none
 - supported features: 8
 
-This matters because the commit-level workflow cannot use arbitrary PROMISE features. It can only deploy a model whose required features can be derived or proxied from changed source files in CI/CD. That is why `RF` on `KC1` became the operational model even though `ExtraTrees` was the strongest family overall in the research benchmark.
+This matters because the commit-level workflow cannot use arbitrary PROMISE features. It can only deploy a model whose required features can be derived or proxied from changed source files in CI/CD. That is why `RF` on `KC1` became the operational model even though `BalancedRF` was the strongest family overall in the current research benchmark.
 
 ## How to Get a Prediction from the Final Model
 
@@ -343,7 +375,7 @@ The final deployed model is:
 
 - model: `RF`
 - dataset: `KC1`
-- threshold: `0.45388100311700624`
+- threshold: `0.5585755777185836`
 - bundle path: `src/models/deployment/best_model_bundle.pkl`
 
 ### 1. Start the API
@@ -484,7 +516,7 @@ Outputs appear in:
 The current saved Experiment 3 outputs in the working tree were generated with:
 
 ```powershell
-python -m src.train_individual_benchmark --random-search-iters 1 --train-n-jobs 1
+python -m src.train_individual_benchmark --data-dir data/raw --baseline existing --top-k 12
 ```
 
 This is the exact command path that produced the current saved local benchmark tables, deployment bundle, and XAI outputs.
@@ -504,7 +536,7 @@ This is the exact command path that produced the current saved local benchmark t
 ## Limitations and Next Steps
 
 - The strongest overall benchmark family and the best deployable model are different by design:
-  - benchmark winner: `ExtraTrees`
+  - benchmark winner: `BalancedRF`
   - deployable winner: `RF` on `KC1`
 - The CI/CD pipeline uses commit-level proxy metrics derived from `lizard`, so some PROMISE features are approximated rather than observed exactly.
 - Experiments 1 and 2 are described from saved branch artifacts, while Experiment 3 is described from the current local benchmark outputs.
@@ -522,8 +554,8 @@ This is the exact command path that produced the current saved local benchmark t
 
 The full experimentation pipeline shows a clear methodological progression. Combined-data experiments were valuable for establishing the classical machine learning baseline, and they confirmed that tree ensembles and logistic regression were viable defect-prediction candidates. However, the transition from Experiment 1 to Experiment 2 showed that evaluation design matters: once thresholding was tied to a dedicated validation split, the model ranking changed.
 
-The final individual-dataset benchmark showed that performance is heterogeneous across PROMISE datasets. No single model is universally best under every criterion. Across the 12-dataset benchmark, `ExtraTrees` was the strongest overall family by mean rank. At the same time, the final deployment decision had to consider more than benchmark rank alone. `RF` on `KC1` became the operational choice because it combined strong predictive performance with full CI/CD feature compatibility and a clean serving path through the API and commit predictor.
+The final individual-dataset benchmark showed that performance is heterogeneous across PROMISE datasets. No single model is universally best under every criterion. Across the current full 12-dataset benchmark, `BalancedRF` was the strongest overall family by mean rank and mean MCC improvement over the combined baseline. At the same time, the final deployment decision had to consider more than benchmark rank alone. `RF` on `KC1` became the operational choice because it combined strong predictive performance with full CI/CD feature compatibility and a clean serving path through the API and commit predictor.
 
 ### Final Answer to the Research Question
 
-The project concludes that there is no single universally best model under all criteria. Benchmark superiority and deployment suitability must be treated separately. For this project, `ExtraTrees` is the strongest research winner across the full individual-dataset benchmark, while `RF` on `KC1` is the strongest engineering winner for practical automated defect-risk prediction. This is not a contradiction; it is the central result of the whole experimentation process.
+The project concludes that there is no single universally best model under all criteria. Benchmark superiority and deployment suitability must be treated separately. For this project, `BalancedRF` is the strongest research winner across the current full individual-dataset benchmark, while `RF` on `KC1` is the strongest engineering winner for practical automated defect-risk prediction. This is not a contradiction; it is the central result of the whole experimentation process.
