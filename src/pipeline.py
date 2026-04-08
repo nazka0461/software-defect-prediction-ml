@@ -34,7 +34,6 @@ from sklearn.model_selection import (
     RandomizedSearchCV,
     RepeatedStratifiedKFold,
     StratifiedKFold,
-    cross_val_predict,
     cross_validate,
     train_test_split,
 )
@@ -57,7 +56,7 @@ DATASET_COL = "dataset"
 RANDOM_STATE = 42
 TEST_SIZE = 0.20
 VALIDATION_SIZE = 0.20
-TRAIN_N_JOBS =9
+TRAIN_N_JOBS = 9
 RANDOM_SEARCH_ITERS = 40
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -85,17 +84,23 @@ def load_pipeline_artifact(path: Path) -> Tuple[Any, List[str], Dict[str, Any]]:
 
     artifact = joblib.load(path)
     if not isinstance(artifact, dict):
-        raise TypeError("Pipeline artifact must be a dict containing 'pipeline' and 'feature_columns'.")
+        raise TypeError(
+            "Pipeline artifact must be a dict containing 'pipeline' and 'feature_columns'."
+        )
 
     if "pipeline" not in artifact or "feature_columns" not in artifact:
-        raise KeyError("Pipeline artifact must contain keys: 'pipeline' and 'feature_columns'.")
+        raise KeyError(
+            "Pipeline artifact must contain keys: 'pipeline' and 'feature_columns'."
+        )
 
     pipeline = artifact["pipeline"]
     feature_columns = artifact["feature_columns"]
     meta = artifact.get("meta", {})
 
     if not hasattr(pipeline, "steps"):
-        raise TypeError("Loaded pipeline does not appear to be a sklearn-style pipeline.")
+        raise TypeError(
+            "Loaded pipeline does not appear to be a sklearn-style pipeline."
+        )
 
     if not isinstance(feature_columns, list) or not feature_columns:
         raise ValueError("'feature_columns' must be a non-empty list.")
@@ -117,18 +122,24 @@ def get_dataset_xy(
 
     missing_features = [c for c in feature_columns if c not in subset.columns]
     if missing_features:
-        raise ValueError(f"Dataset '{dataset_name}' is missing feature columns: {missing_features}")
+        raise ValueError(
+            f"Dataset '{dataset_name}' is missing feature columns: {missing_features}"
+        )
 
     X = subset[feature_columns].values.astype(float)
     y = subset[TARGET_COL].values.astype(int)
     defect_rate = 100 * y.mean() if len(y) else 0.0
-    log.info("[%s] n=%d  defective=%d (%.1f%%)", dataset_name, len(y), y.sum(), defect_rate)
+    log.info(
+        "[%s] n=%d  defective=%d (%.1f%%)", dataset_name, len(y), y.sum(), defect_rate
+    )
     return X, y
 
 
 def apply_preprocessing(pipeline: Any, X: np.ndarray) -> np.ndarray:
     if len(pipeline.steps) < 2:
-        raise ValueError("Pipeline must contain preprocessing step(s) and a final estimator step.")
+        raise ValueError(
+            "Pipeline must contain preprocessing step(s) and a final estimator step."
+        )
     return pipeline[:-1].transform(X)
 
 
@@ -229,7 +240,9 @@ def build_param_distributions() -> Dict[str, Dict[str, List[Any]]]:
     }
 
 
-def with_fold_safe_smote(name: str, model: Any, params: Dict[str, Any]) -> Tuple[Any, Dict[str, Any]]:
+def with_fold_safe_smote(
+    name: str, model: Any, params: Dict[str, Any]
+) -> Tuple[Any, Dict[str, Any]]:
     use_smote = {"LogReg"}
     if name not in use_smote:
         return model, params
@@ -428,7 +441,9 @@ def plot_roc_curves(
     for name, model in models_dict.items():
         y_score = get_positive_scores(model, X_test)
         if np.unique(y_test).size < 2:
-            log.warning("Skipping ROC curve for '%s': test labels contain only one class.", name)
+            log.warning(
+                "Skipping ROC curve for '%s': test labels contain only one class.", name
+            )
             continue
         fpr, tpr, _ = roc_curve(y_test, y_score)
         auc = roc_auc_score(y_test, y_score)
@@ -458,7 +473,9 @@ def plot_pr_curves(
 
     ax.set_xlabel("Recall")
     ax.set_ylabel("Precision")
-    ax.set_title("Precision-Recall Curves — Held-Out Test Set", fontsize=12, fontweight="bold")
+    ax.set_title(
+        "Precision-Recall Curves — Held-Out Test Set", fontsize=12, fontweight="bold"
+    )
     ax.legend(fontsize=8, loc="upper right")
     _savefig(out_path)
 
@@ -488,12 +505,19 @@ def plot_confusion_matrices(
             display_labels=["Clean", "Defective"],
         )
         disp.plot(ax=axes[idx], colorbar=False, cmap="Blues", values_format=".2f")
-        axes[idx].set_title(f"{name}\nthr={threshold:.3f}", fontsize=9, fontweight="bold")
+        axes[idx].set_title(
+            f"{name}\nthr={threshold:.3f}", fontsize=9, fontweight="bold"
+        )
 
     for j in range(idx + 1, len(axes)):
         axes[j].set_visible(False)
 
-    plt.suptitle("Normalised Confusion Matrices — Thresholded Test Predictions", fontsize=12, fontweight="bold", y=1.01)
+    plt.suptitle(
+        "Normalised Confusion Matrices — Thresholded Test Predictions",
+        fontsize=12,
+        fontweight="bold",
+        y=1.01,
+    )
     _savefig(out_path)
 
 
@@ -502,20 +526,20 @@ def plot_cross_dataset_heatmap(
     cross_dfs: Dict[str, pd.DataFrame],
     out_path: Path,
 ) -> None:
-    base = (
-        test_df.set_index("Model")[["F1", "MCC"]]
-        .rename(columns={"F1": "KC1_F1", "MCC": "KC1_MCC"})
+    base = test_df.set_index("Model")[["F1", "MCC"]].rename(
+        columns={"F1": "KC1_F1", "MCC": "KC1_MCC"}
     )
 
     for ds_name, ds_df in cross_dfs.items():
-        tmp = (
-            ds_df.set_index("Model")[["F1", "MCC"]]
-            .rename(columns={"F1": f"{ds_name}_F1", "MCC": f"{ds_name}_MCC"})
+        tmp = ds_df.set_index("Model")[["F1", "MCC"]].rename(
+            columns={"F1": f"{ds_name}_F1", "MCC": f"{ds_name}_MCC"}
         )
         base = base.join(tmp, how="left")
 
     n_cols = len(base.columns)
-    fig, ax = plt.subplots(figsize=(max(7, n_cols * 1.6), max(4, len(base) * 0.75 + 1.5)))
+    fig, ax = plt.subplots(
+        figsize=(max(7, n_cols * 1.6), max(4, len(base) * 0.75 + 1.5))
+    )
     sns.heatmap(
         base.astype(float),
         annot=True,
@@ -545,7 +569,9 @@ def plot_feature_importance(
         estimator = model.named_steps["clf"]
 
     if not hasattr(estimator, "feature_importances_"):
-        log.warning("Skipping feature importance: '%s' has no feature_importances_.", model_name)
+        log.warning(
+            "Skipping feature importance: '%s' has no feature_importances_.", model_name
+        )
         return
 
     importances = np.asarray(estimator.feature_importances_)
@@ -558,13 +584,19 @@ def plot_feature_importance(
         )
         return
 
-    imp_series = pd.Series(importances, index=feature_columns).sort_values(ascending=True)
+    imp_series = pd.Series(importances, index=feature_columns).sort_values(
+        ascending=True
+    )
     top_imp = imp_series.tail(min(top_k, len(imp_series)))
 
     fig, ax = plt.subplots(figsize=(8, max(4, len(top_imp) * 0.5 + 1)))
     colors = plt.cm.viridis(np.linspace(0.2, 0.8, len(top_imp)))
     top_imp.plot(kind="barh", ax=ax, color=colors, edgecolor="black", linewidth=0.5)
-    ax.set_title(f"Top-{len(top_imp)} Feature Importances ({model_name})", fontsize=12, fontweight="bold")
+    ax.set_title(
+        f"Top-{len(top_imp)} Feature Importances ({model_name})",
+        fontsize=12,
+        fontweight="bold",
+    )
     ax.set_xlabel("Importance")
     _savefig(out_path)
 
@@ -581,14 +613,21 @@ def main() -> None:
 
     missing_features = [c for c in feature_columns if c not in df.columns]
     if missing_features:
-        raise ValueError(f"Input dataset is missing required feature columns: {missing_features}")
+        raise ValueError(
+            f"Input dataset is missing required feature columns: {missing_features}"
+        )
 
     log.info("STEP 2 — Preparing pooled dataset (all NASA subsets combined)")
     X_all_raw = df[feature_columns].values.astype(float)
     y_all = df[TARGET_COL].values.astype(int)
     X_all = apply_preprocessing(pipeline, X_all_raw)
     defect_rate = 100 * y_all.mean() if len(y_all) else 0.0
-    log.info("Pooled dataset shape=%s | defective=%d (%.1f%%)", X_all.shape, y_all.sum(), defect_rate)
+    log.info(
+        "Pooled dataset shape=%s | defective=%d (%.1f%%)",
+        X_all.shape,
+        y_all.sum(),
+        defect_rate,
+    )
 
     log.info("STEP 3 — Global stratified train/validation/test split")
     holdout_size = TEST_SIZE + VALIDATION_SIZE
@@ -607,7 +646,9 @@ def main() -> None:
         stratify=y_holdout,
         random_state=RANDOM_STATE,
     )
-    log.info("Train=%s  Validation=%s  Test=%s", X_train.shape, X_val.shape, X_test.shape)
+    log.info(
+        "Train=%s  Validation=%s  Test=%s", X_train.shape, X_val.shape, X_test.shape
+    )
 
     class_balance = pd.Series(y_train).value_counts().sort_index().to_dict()
     neg_count = int(class_balance.get(0, 0))
@@ -620,7 +661,9 @@ def main() -> None:
     )
 
     tune_cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-    report_cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=RANDOM_STATE)
+    report_cv = RepeatedStratifiedKFold(
+        n_splits=5, n_repeats=3, random_state=RANDOM_STATE
+    )
     scoring = {
         "f1": "f1",
         "roc_auc": "roc_auc",
@@ -697,7 +740,9 @@ def main() -> None:
         trained_models[name] = best_model
         log.info("  [%s] Saved → %s", name, model_path)
 
-        test_metrics = evaluate_on_test(name, best_model, X_test, y_test, best_threshold)
+        test_metrics = evaluate_on_test(
+            name, best_model, X_test, y_test, best_threshold
+        )
         test_rows.append(test_metrics)
         log.info(
             "  [%s] Global test → F1=%.4f  MCC=%.4f",
@@ -723,7 +768,9 @@ def main() -> None:
         .reset_index(drop=True)
     )
     ranking_df.index += 1
-    ranking_df.to_csv(RESULTS_DIR / "model_ranking_overall.csv", index=True, index_label="Rank")
+    ranking_df.to_csv(
+        RESULTS_DIR / "model_ranking_overall.csv", index=True, index_label="Rank"
+    )
 
     best_row = ranking_df.iloc[0]
     best_name = best_row["Model"]
@@ -752,7 +799,9 @@ def main() -> None:
         "Mean MCC",
         PLOTS_DIR / "cv_mcc_comparison_overall.png",
     )
-    plot_roc_curves(trained_models, X_test, y_test, PLOTS_DIR / "roc_curves_overall.png")
+    plot_roc_curves(
+        trained_models, X_test, y_test, PLOTS_DIR / "roc_curves_overall.png"
+    )
     plot_pr_curves(trained_models, X_test, y_test, PLOTS_DIR / "pr_curves_overall.png")
     plot_confusion_matrices(
         trained_models,
@@ -763,9 +812,13 @@ def main() -> None:
     )
 
     tree_candidates = ("RF", "XGB", "LGBM", "ExtraTrees", "BalancedRF")
-    tree_name = best_name if best_name in tree_candidates else next(
-        (c for c in tree_candidates if c in trained_models),
-        None,
+    tree_name = (
+        best_name
+        if best_name in tree_candidates
+        else next(
+            (c for c in tree_candidates if c in trained_models),
+            None,
+        )
     )
 
     if tree_name is not None:
@@ -778,11 +831,24 @@ def main() -> None:
 
     sep = "=" * 70
     print(f"\n{sep}\nGLOBAL HELD-OUT TEST SET RESULTS (COMBINED NASA DATASET)\n{sep}")
-    print(tabulate(test_df.round(4), headers="keys", tablefmt="pretty", showindex=False))
+    print(
+        tabulate(test_df.round(4), headers="keys", tablefmt="pretty", showindex=False)
+    )
 
-    print(f"\n{sep}\nCROSS-VALIDATION RESULTS (mean ± std, 5x3 repeated stratified, pooled training)\n{sep}")
+    print(
+        f"\n{sep}\nCROSS-VALIDATION RESULTS (mean ± std, 5x3 repeated stratified, pooled training)\n{sep}"
+    )
     cv_display = cv_df[
-        ["Model", "f1_mean", "f1_std", "mcc_mean", "mcc_std", "roc_auc_mean", "precision_mean", "recall_mean"]
+        [
+            "Model",
+            "f1_mean",
+            "f1_std",
+            "mcc_mean",
+            "mcc_std",
+            "roc_auc_mean",
+            "precision_mean",
+            "recall_mean",
+        ]
     ].round(4)
     print(tabulate(cv_display, headers="keys", tablefmt="pretty", showindex=False))
 
@@ -798,3 +864,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
