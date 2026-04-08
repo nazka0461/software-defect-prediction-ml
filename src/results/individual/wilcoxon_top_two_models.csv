@@ -1,0 +1,2 @@
+model_left,model_right,statistic,pvalue
+BalancedRF,LogReg,18.0,0.10986328125

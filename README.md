@@ -1,5 +1,7 @@
 ## AI/ML Software Defect Prediction
 
+[![Defect Risk Check](https://github.com/nazka0461/software-defect-prediction-ml/actions/workflows/defect_check.yml/badge.svg)](https://github.com/nazka0461/software-defect-prediction-ml/actions/workflows/defect_check.yml)
+
 **Student**: Azka Noor (ID: 24091601)  
 **Module**: 7COM1040 — Computer Science Masters Project  
 **University**: University of Hertfordshire  
@@ -86,6 +88,35 @@ Current layout of the project:
 - **`figures/`**: Generated plots and diagrams for reports and the thesis (e.g. `preprocessing_feature_selection.png`)
 - **`scripts/`**: Command-line scripts (e.g. `metrics_calc.py` for running workflows)
 - **`requirements.txt`**: Python dependencies (used with a uv-managed `.venv`)
+
+### Main Commands
+
+The new individual-dataset workflow now lives alongside the original combined baseline.
+
+Run the 12-dataset individual benchmark:
+
+```powershell
+python -m src.train_individual_benchmark --data-dir data/raw --baseline existing --top-k 12
+```
+
+Run a faster smoke benchmark on one dataset:
+
+```powershell
+python -m src.train_individual_benchmark --datasets KC1 --random-search-iters 1 --train-n-jobs 1
+```
+
+Start the Flask prediction API from the generated deployment bundle:
+
+```powershell
+$env:MODEL_BUNDLE_PATH="src/models/deployment/best_model_bundle.pkl"
+python -m src.app
+```
+
+Generate a commit-level defect report against the running API:
+
+```powershell
+python scripts/predict_commit.py --output defect_report.json
+```
 
 ### Getting Started
 

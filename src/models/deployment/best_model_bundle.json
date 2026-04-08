@@ -1,0 +1,22 @@
+{
+  "dataset_name": "KC1",
+  "model_name": "RF",
+  "threshold": 0.5585755777185836,
+  "benchmark_metrics": {
+    "F1": 0.6013071895424836,
+    "MCC": 0.5242778799815218,
+    "AUC-ROC": 0.8481361775479423
+  },
+  "strictly_deployable": true,
+  "supported_features": [
+    "e",
+    "ev(g)",
+    "i",
+    "l",
+    "lOBlank",
+    "lOComment",
+    "locCodeAndComment",
+    "uniq_Op"
+  ],
+  "missing_features": []
+}

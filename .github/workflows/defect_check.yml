@@ -1,0 +1,70 @@
+name: Defect Risk Check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  defect-predict:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start prediction API
+        env:
+          MODEL_BUNDLE_PATH: src/models/deployment/best_model_bundle.pkl
+        run: |
+          python -m src.app > defect_api.log 2>&1 &
+          sleep 10
+
+      - name: Extract metrics and predict
+        run: |
+          python scripts/predict_commit.py --output defect_report.json
+
+      - name: Upload risk report
+        uses: actions/upload-artifact@v4
+        with:
+          name: defect-report
+          path: defect_report.json
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('defect_report.json', 'utf8'));
+            const rows = report.predictions
+              .slice(0, 10)
+              .map(item => `| \`${item.file}\` | ${item.probability.toFixed(3)} | ${item.label} |`)
+              .join('\n');
+            const body = [
+              '## Defect Risk Check',
+              '',
+              `Model: \`${report.model}\``,
+              `Dataset: \`${report.dataset}\``,
+              `Files analyzed: \`${report.file_count}\``,
+              '',
+              '| File | Probability | Label |',
+              '| --- | ---: | --- |',
+              rows || '| No Python/Java files changed | - | - |',
+            ].join('\n');
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

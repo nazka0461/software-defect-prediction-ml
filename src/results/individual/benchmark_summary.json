@@ -1,0 +1,43 @@
+{
+  "baseline_mode": "existing",
+  "dataset_count": 12,
+  "overall_model_family_winner": {
+    "Model": "BalancedRF",
+    "mean_rank": 2.75,
+    "mean_MCC": 0.3389615860449051,
+    "mean_F1": 0.4027603134269002,
+    "mean_AUC_ROC": 0.7703128132366044
+  },
+  "deployable_winner": {
+    "Dataset": "KC1",
+    "raw_feature_count": 21,
+    "post_filter_feature_count": 8,
+    "selected_feature_count": 8,
+    "Model": "RF",
+    "Threshold": 0.5585755777185836,
+    "F1": 0.6013071895424836,
+    "Precision": 0.5227272727272727,
+    "Recall": 0.7076923076923077,
+    "AUC-ROC": 0.8481361775479423,
+    "MCC": 0.5242778799815218,
+    "supported_feature_count": 8,
+    "missing_feature_count": 0,
+    "supported_features": [
+      "e",
+      "ev(g)",
+      "i",
+      "l",
+      "lOBlank",
+      "lOComment",
+      "locCodeAndComment",
+      "uniq_Op"
+    ],
+    "missing_features": [],
+    "strictly_deployable": 1
+  },
+  "baseline_reference": {
+    "test_results": "C:\\Work\\software-defect-prediction-ml\\src\\results\\test_results_overall.csv",
+    "cv_results": "C:\\Work\\software-defect-prediction-ml\\src\\results\\cv_results_overall.csv",
+    "ranking": "C:\\Work\\software-defect-prediction-ml\\src\\results\\model_ranking_overall.csv"
+  }
+}
