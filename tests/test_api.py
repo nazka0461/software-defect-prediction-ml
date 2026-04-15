@@ -1,4 +1,4 @@
-import threading
+﻿import threading
 import time
 from pathlib import Path
 
@@ -88,6 +88,34 @@ def test_health_returns_bundle_metadata(app_client) -> None:
     assert payload["model"] == "LogReg"
     assert payload["dataset"] == "TESTSET"
     assert payload["selected_feature_order"] == ["loc", "lOComment", "v(g)"]
+
+
+def test_ui_home_renders(app_client) -> None:
+    response = app_client.get("/")
+    assert response.status_code == 200
+    assert b"Defect Risk Inference UI" in response.data
+
+
+def test_ui_predict_accepts_c_source(app_client) -> None:
+    sample_c = """
+    #include <stdio.h>
+    int main() {
+        int x = 0;
+        for (int i = 0; i < 10; i++) {
+            x += i;
+        }
+        if (x > 10) { printf("risk"); }
+        return 0;
+    }
+    """
+    response = app_client.post(
+        "/ui/predict",
+        data={"source_suffix": ".c", "code": sample_c},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 200
+    assert b"Prediction Report" in response.data
+    assert b"Mapped Metrics Used for Prediction" in response.data
 
 
 def test_predict_accepts_valid_metrics(app_client) -> None:

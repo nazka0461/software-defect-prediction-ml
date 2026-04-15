@@ -1,5 +1,6 @@
 import math
 import re
+import tempfile
 from pathlib import Path
 from typing import Dict, Iterable, List, Set
 
@@ -167,7 +168,9 @@ def _extract_halstead_like_metrics(tokens: Iterable[str]) -> Dict[str, float]:
 
 def extract_file_metrics(path: Path) -> Dict[str, float]:
     """
-    Extract commit-level proxy metrics for a Python or Java file.
+    Extract commit-level proxy metrics for a source file.
+
+    Supported by lizard for C/C++, Java, and Python.
     """
     path = Path(path)
     source = path.read_text(encoding="utf-8", errors="ignore")
@@ -203,6 +206,28 @@ def extract_file_metrics(path: Path) -> Dict[str, float]:
 
     alias_map = _feature_alias_map()
     return {feature_name: raw_metrics[raw_key] for feature_name, raw_key in alias_map.items()}
+
+
+def extract_source_metrics(source_code: str, suffix: str = ".c") -> Dict[str, float]:
+    """
+    Extract commit-level proxy metrics directly from source text.
+
+    The suffix controls language parsing behavior (for example, .c, .cpp, .java, .py).
+    """
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        suffix=suffix,
+        delete=False,
+    ) as tmp_file:
+        tmp_file.write(source_code)
+        temp_path = Path(tmp_file.name)
+
+    try:
+        return extract_file_metrics(temp_path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
 
 
 def coverage_for_features(feature_names: Iterable[str]) -> Dict[str, List[str]]:

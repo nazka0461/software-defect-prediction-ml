@@ -112,6 +112,12 @@ $env:MODEL_BUNDLE_PATH="src/models/deployment/best_model_bundle.pkl"
 python -m src.app
 ```
 
+Open the browser UI for upload/paste-based inference:
+
+- URL: `http://127.0.0.1:5000/`
+- Includes built-in sample C code and supports file uploads for `.c/.h/.cpp/.java/.py`
+- Demo upload file: `samples/sample_module.c`
+
 Generate a commit-level defect report against the running API:
 
 ```powershell

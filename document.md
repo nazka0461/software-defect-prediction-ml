@@ -497,9 +497,10 @@ Generated outputs appear in:
 
 ### Reproduce Experiment 3
 
-From the current local working tree:
+From the Experiment 3 branch:
 
 ```powershell
+git switch --detach origin/feat/individual-models
 python -m src.train_individual_benchmark --data-dir data/raw --baseline existing --top-k 12
 ```
 
@@ -511,9 +512,9 @@ Outputs appear in:
 - `src/models/deployment/`
 - `figures/xai/`
 
-### Exact Command Used for the Current Saved Local Benchmark
+### Exact Command Used for the Current Saved Experiment 3 Benchmark
 
-The current saved Experiment 3 outputs in the working tree were generated with:
+The current saved Experiment 3 outputs on `origin/feat/individual-models` were generated with:
 
 ```powershell
 python -m src.train_individual_benchmark --data-dir data/raw --baseline existing --top-k 12
@@ -539,7 +540,7 @@ This is the exact command path that produced the current saved local benchmark t
   - benchmark winner: `BalancedRF`
   - deployable winner: `RF` on `KC1`
 - The CI/CD pipeline uses commit-level proxy metrics derived from `lizard`, so some PROMISE features are approximated rather than observed exactly.
-- Experiments 1 and 2 are described from saved branch artifacts, while Experiment 3 is described from the current local benchmark outputs.
+- Experiments 1 and 2 are described from saved branch artifacts, while Experiment 3 is described from the saved outputs on `origin/feat/individual-models`.
 - A future refinement would be to rerun the full 12-dataset benchmark with the preferred higher-iteration tuning budget and preserve those outputs as a final frozen results snapshot.
 
 ## Reproducibility Matrix
@@ -548,7 +549,7 @@ This is the exact command path that produced the current saved local benchmark t
 | --- | --- |
 | Experiment 1 | `origin/main` |
 | Experiment 2 | `origin/req/split` |
-| Experiment 3 | current local `req/split` working tree |
+| Experiment 3 | `origin/feat/individual-models` |
 
 ## Final Conclusions
 
