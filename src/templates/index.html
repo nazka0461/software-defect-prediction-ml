@@ -161,6 +161,7 @@
     }
 
     input[type="file"],
+    input[type="number"],
     select,
     textarea {
       width: 100%;
@@ -173,6 +174,7 @@
     }
 
     input[type="file"],
+    input[type="number"],
     select {
       padding: 0.52rem 0.62rem;
       font-size: 0.9rem;
@@ -188,6 +190,7 @@
     }
 
     input[type="file"]:focus,
+    input[type="number"]:focus,
     select:focus,
     textarea:focus {
       outline: none;
@@ -393,7 +396,7 @@
       <div class="meta">
         <span class="chip">Model: {{ model }}</span>
         <span class="chip">Dataset: {{ dataset }}</span>
-        <span class="chip">Decision Threshold: {{ "%.3f"|format(threshold) }}</span>
+        <span class="chip">Decision Threshold: {{ "%.3f"|format(threshold_input) }}</span>
       </div>
     </section>
 
@@ -422,12 +425,37 @@
 
           <aside>
             <div class="field">
+              <label for="bundle_key">Dataset / model for inference</label>
+              <select id="bundle_key" name="bundle_key">
+                {% for option in model_options %}
+                <option value="{{ option.key }}" {% if option.key == selected_bundle_key %}selected{% endif %}>
+                  {{ option.label }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="field">
               <label for="source_suffix">Language suffix for parser behavior</label>
               <select id="source_suffix" name="source_suffix">
                 {% for suffix in upload_suffixes %}
                 <option value="{{ suffix }}" {% if suffix == source_suffix %}selected{% endif %}>{{ suffix }}</option>
                 {% endfor %}
               </select>
+            </div>
+
+            <div class="field">
+              <label for="threshold_override">Decision threshold (0 to 1)</label>
+              <input
+                id="threshold_override"
+                name="threshold_override"
+                type="number"
+                min="0"
+                max="1"
+                step="0.001"
+                value="{{ "%.3f"|format(threshold_input) }}"
+              >
+              <p class="hint">Model default: {{ "%.3f"|format(model_default_threshold) }}</p>
             </div>
 
             <div class="side-card">

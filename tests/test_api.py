@@ -93,7 +93,7 @@ def test_health_returns_bundle_metadata(app_client) -> None:
 def test_ui_home_renders(app_client) -> None:
     response = app_client.get("/")
     assert response.status_code == 200
-    assert b"Defect Risk Inference UI" in response.data
+    assert b"Defect Risk Inference Console" in response.data
 
 
 def test_ui_predict_accepts_c_source(app_client) -> None:
@@ -139,6 +139,19 @@ def test_predict_handles_missing_metrics_with_imputer(app_client) -> None:
     assert 0.0 <= payload["probability"] <= 1.0
 
 
+
+def test_predict_accepts_threshold_override(app_client) -> None:
+    response = app_client.post(
+        "/predict",
+        json={
+            "metrics": {"loc": 30, "lOComment": 4, "v(g)": 2},
+            "threshold": 0.9,
+        },
+    )
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["threshold"] == 0.9
+
 def test_predict_rejects_malformed_payload(app_client) -> None:
     response = app_client.post("/predict", json={"bad": "payload"})
     assert response.status_code == 400
@@ -154,3 +167,5 @@ def test_live_server_accepts_requests(live_server: str) -> None:
     payload = response.json()
     assert payload["dataset"] == "TESTSET"
     assert "probability" in payload
+
+

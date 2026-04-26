@@ -129,10 +129,18 @@ def explain_prediction(
     return _global_feature_importance(bundle)[:top_n]
 
 
-def predict_from_metrics(bundle: Dict[str, Any], metrics: Dict[str, Any]) -> Dict[str, Any]:
+def predict_from_metrics(
+    bundle: Dict[str, Any],
+    metrics: Dict[str, Any],
+    threshold_override: Optional[float] = None,
+) -> Dict[str, Any]:
     X_selected = transform_with_artifact(bundle["preprocessing_artifact"], metrics)
     probability = float(get_positive_scores(bundle["model"], X_selected)[0])
-    threshold = float(bundle["threshold"])
+    threshold = (
+        float(threshold_override)
+        if threshold_override is not None
+        else float(bundle["threshold"])
+    )
     label = "DEFECT-PRONE" if probability >= threshold else "CLEAN"
     top_features = explain_prediction(bundle, X_selected)
 
